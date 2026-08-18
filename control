@@ -1,0 +1,11 @@
+Package: io.github.retribution-mod.app
+Name: Retribution
+Version: 2.0.1
+Architecture: iphoneos-arm
+Description: A mod for Discord's mobile apps.
+Maintainer: Cristiandis
+Author: Pylix, Adrian Castro, FieryFlames, Cristiandis
+Icon: https://avatars.githubusercontent.com/u/159218871
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000)
+Conflicts: app.enmity, mod.vendetta, app.bunny
