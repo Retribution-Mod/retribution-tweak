@@ -53,7 +53,7 @@ static LoaderConfig *loaderConfig;
 
     NSMutableURLRequest *bundleRequest = [NSMutableURLRequest requestWithURL:bundleUrl
                                                                cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
-                                                           timeoutInterval:3.0];
+                                                           timeoutInterval:30.0];
 
     NSString *bundleEtag = [NSString stringWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag.txt"]
                                                    encoding:NSUTF8StringEncoding
@@ -64,7 +64,9 @@ static LoaderConfig *loaderConfig;
 
     NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
     [[session dataTaskWithRequest:bundleRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+        if (error) {
+            RetributionLog(@"Failed to download bundle: %@", error);
+        } else if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
             NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
             if (httpResponse.statusCode == 200) {
                 bundle = data;
@@ -77,12 +79,20 @@ static LoaderConfig *loaderConfig;
                            encoding:NSUTF8StringEncoding
                               error:nil];
                 }
+            } else {
+                RetributionLog(@"Bundle download returned status code %ld", (long)httpResponse.statusCode);
             }
+        } else {
+            RetributionLog(@"Bundle download returned non-HTTP response: %@", response);
         }
         dispatch_group_leave(group);
     }] resume];
 
     dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+
+    if (!bundle) {
+        RetributionLog(@"No bundle available; Retribution will not load");
+    }
 
     NSString *themeString = [NSString stringWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"current-theme.json"]
                                                     encoding:NSUTF8StringEncoding
