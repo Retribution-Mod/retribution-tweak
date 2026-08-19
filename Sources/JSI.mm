@@ -24,7 +24,7 @@ private:
 BOOL isHermesBytecode(NSData *data) {
     if (data.length < 4) return NO;
     const uint8_t *bytes = (const uint8_t *)data.bytes;
-    return bytes[0] == 0x48 && bytes[1] == 0x42 && bytes[2] == 0x43 && bytes[3] == 0x01;
+    return bytes[0] == 0x48 && bytes[1] == 0x65 && bytes[2] == 0x72 && bytes[3] == 0x6d;
 }
 
 }

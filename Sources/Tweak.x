@@ -192,8 +192,15 @@ pyoncordDirectory = getPyoncordDirectory();
         loaderConfig = [[LoaderConfig alloc] init];
         [loaderConfig loadConfig];
         
+        Class hostClass = objc_getClass("RCTHost");
+        BOOL newArchEnabled = hostClass != Nil;
+        id rawValue = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"RCTNewArchEnabled"];
+        if (rawValue) {
+            newArchEnabled = [rawValue boolValue];
+        }
+
         Class cls = objc_getClass("RCTCxxBridge");
-        if (cls) {
+        if (!newArchEnabled && cls) {
             %init(RCTCxxBridgeGroup, RCTCxxBridge = cls);
         }
     }

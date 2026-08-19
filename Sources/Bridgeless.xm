@@ -15,12 +15,6 @@
 - (void)instance:(id)instance didInitializeRuntime:(facebook::jsi::Runtime &)runtime {
     %orig;
 
-    static BOOL didInitialize = NO;
-    if (didInitialize) {
-        return;
-    }
-    didInitialize = YES;
-
     RetributionLog(@"RCTHost didInitializeRuntime (bridgeless/new arch)");
 
     LoaderConfig *loaderConfig = [LoaderConfig getLoaderConfig];
@@ -137,11 +131,17 @@
 %ctor {
     @autoreleasepool {
         Class cls = objc_getClass("RCTHost");
-        if (cls) {
+        BOOL newArchEnabled = cls != Nil;
+        id rawValue = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"RCTNewArchEnabled"];
+        if (rawValue) {
+            newArchEnabled = [rawValue boolValue];
+        }
+
+        if (newArchEnabled && cls) {
             RetributionLog(@"RCTHost detected, installing bridgeless loader hook");
             %init(RCTHostGroup, RCTHost = cls);
         } else {
-            RetributionLog(@"RCTHost not found, bridgeless loader not installed");
+            RetributionLog(@"RCTHost not active, bridgeless loader not installed");
         }
     }
 }
