@@ -7,9 +7,11 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = Retribution
 BUNDLE_NAME = RetributionResources
 
-Retribution_FILES = $(wildcard Sources/*.x Sources/*.m Sources/**/*.x Sources/**/*.m)
+Retribution_FILES = $(wildcard Sources/*.x Sources/*.xm Sources/*.m Sources/*.mm Sources/**/*.x Sources/**/*.xm Sources/**/*.m Sources/**/*.mm)
 Retribution_CFLAGS = -fobjc-arc -DPACKAGE_VERSION='@"$(THEOS_PACKAGE_BASE_VERSION)"' -I$(THEOS_PROJECT_DIR)/Headers
+Retribution_CCFLAGS = -std=c++17 -fobjc-arc -I$(THEOS_PROJECT_DIR)/Headers
 Retribution_FRAMEWORKS = Foundation UIKit CoreGraphics CoreText CoreFoundation
+Retribution_LDFLAGS = -undefined dynamic_lookup
 
 RetributionResources_INSTALL_PATH = "/Library/Application\ Support/"
 RetributionResources_RESOURCE_DIRS = Resources

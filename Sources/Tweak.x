@@ -12,6 +12,8 @@ static NSString *retributionPatchesBundlePath;
 static NSURL *pyoncordDirectory;
 static LoaderConfig *loaderConfig;
 
+%group RCTCxxBridgeGroup
+
 %hook RCTCxxBridge
 
 - (void)executeApplicationScript:(NSData *)script url:(NSURL *)url async:(BOOL)async {
@@ -156,6 +158,8 @@ static LoaderConfig *loaderConfig;
 
 %end
 
+%end
+
 %ctor {
     @autoreleasepool {
         source = [NSURL URLWithString:@"retribution"];
@@ -188,6 +192,9 @@ pyoncordDirectory = getPyoncordDirectory();
         loaderConfig = [[LoaderConfig alloc] init];
         [loaderConfig loadConfig];
         
-        %init;
+        Class cls = objc_getClass("RCTCxxBridge");
+        if (cls) {
+            %init(RCTCxxBridgeGroup, RCTCxxBridge = cls);
+        }
     }
 }
