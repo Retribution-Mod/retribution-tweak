@@ -1,6 +1,6 @@
 Package: io.github.retribution-mod.app
 Name: Retribution
-Version: 2.0.2
+Version: 2.0.3
 Architecture: iphoneos-arm
 Description: A mod for Discord's mobile apps.
 Maintainer: Cristiandis

@@ -37,7 +37,19 @@ static LoaderConfig *loaderConfig;
     RetributionLog(@"Injecting loader");
     %orig(patchData, source, YES);
 
-    __block NSData *bundle = [NSData dataWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"bundle.js"]];
+    __block NSData *bundle = nil;
+
+    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle" withExtension:@"js"];
+    if (localBundlePath) {
+        bundle = [NSData dataWithContentsOfURL:localBundlePath];
+        if (bundle) {
+            RetributionLog(@"Loaded embedded bundle from resources: %@", localBundlePath.absoluteString);
+        }
+    }
+
+    if (!bundle) {
+        bundle = [NSData dataWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"bundle.js"]];
+    }
 
     dispatch_group_t group = dispatch_group_create();
     dispatch_group_enter(group);

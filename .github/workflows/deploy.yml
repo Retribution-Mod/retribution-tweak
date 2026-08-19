@@ -104,7 +104,7 @@ jobs:
           path: ${{ env.ROOTLESS_DEB_PATH }}
 
   build-ipa:
-    runs-on: macos-15-intel
+    runs-on: macos-14
     needs: build-tweak
 
     steps:
@@ -158,7 +158,7 @@ jobs:
 
       - name: Inject tweak
         run: |
-          cyan -duws -n "Retribution" -i discord.ipa -o ${{ github.workspace }}/${{ env.APP_NAME }}.ipa -f ${{ github.workspace }}/${{ env.DEB_FILE_NAME }}
+          cyan -duws -i discord.ipa -o ${{ github.workspace }}/${{ env.APP_NAME }}.ipa -f ${{ github.workspace }}/${{ env.DEB_FILE_NAME }}
 
       - name: Upload ipa as artifact
         uses: actions/upload-artifact@v4
@@ -168,7 +168,7 @@ jobs:
 
   release-app:
     if: ${{ github.event.inputs.release == 'true' }}
-    runs-on: macos-15-intel
+    runs-on: macos-14
     needs: build-ipa
     permissions:
       contents: write
@@ -216,7 +216,7 @@ jobs:
   app-repo:
     if: ${{ github.event.inputs.release == 'true' }}
     continue-on-error: true
-    runs-on: macos-15-intel
+    runs-on: macos-14
     needs: release-app
     permissions:
       contents: write
