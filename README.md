@@ -38,7 +38,7 @@
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Retribution-Mod/retribution-tweak/deploy.yml)
 ![Open Software License 3](https://img.shields.io/badge/License-OSL%20v3-yellow.svg)
 
-Tweak to inject the [Retribution bundle](https://github.com/Retribution-Mod/Retribution) into Discord on iOS, adapted to match [retribution-xposed](https://github.com/Retribution-Mod/retribution-xposed) behavior.
+Tweak to inject the [Retribution bundle](https://github.com/Retribution-Mod/retribution-bundle) into Discord on iOS, adapted to match [retribution-xposed](https://github.com/Retribution-Mod/retribution-xposed) behavior.
 
 > [!NOTE]
 > As of right now this tweak does not encompass some functionalities when running in a jailed environment with a wildcard certificate \
