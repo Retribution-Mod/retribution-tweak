@@ -124,8 +124,8 @@ jobs:
         run: |
           mkdir -p icons
           curl -L -o icon.png "$ICON_URL"
-          sips -z 120 120 icon.png --out icons/PyoncordIcon60x60@2x.png
-          sips -z 152 152 icon.png --out icons/PyoncordIcon76x76@2x~ipad.png
+          sips -z 120 120 icon.png --out icons/RetributionIcon60x60@2x.png
+          sips -z 152 152 icon.png --out icons/RetributionIcon76x76@2x~ipad.png
           zip -j ipa-icons.zip icons/*
 
       - name: Extract Values
@@ -142,17 +142,14 @@ jobs:
       - name: Run patcher
         run: |
           if [ "${{ runner.arch }}" = "ARM64" ]; then
-            PATCHER_URL="https://github.com/bunny-mod/ipa-patcher/releases/download/release-pyon/patcher.mac-arm64"
+            PATCHER_URL="https://github.com/Retribution-Mod/retribution-patcher/releases/download/v1.0.0/retribution-patcher-mac-arm64"
           else
-            PATCHER_URL="https://github.com/bunny-mod/ipa-patcher/releases/download/release-pyon/patcher.mac-amd64"
+            PATCHER_URL="https://github.com/Retribution-Mod/retribution-patcher/releases/download/v1.0.0/retribution-patcher-mac-amd64"
           fi
           curl -L -o patcher "$PATCHER_URL"
           chmod +x patcher
-          ./patcher -d discord.ipa -o discord.ipa -i ./ipa-icons.zip
+          ./patcher --icon-zip ./ipa-icons.zip --name "Retribution" --output discord.ipa discord.ipa
   
-      - name: Install cyan
-        run: pip install --force-reinstall https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip Pillow
-
       - name: Install cyan
         run: pip install --force-reinstall https://github.com/asdfzxcvbn/pyzule-rw/archive/main.zip Pillow
 
