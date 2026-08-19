@@ -16,7 +16,7 @@ on:
 
 env:
   GH_TOKEN: ${{ github.token }}
-  ICON_URL: https://i.allyapp.cc/raw/gDH8Eowi.png
+  ICON_URL: https://i.allyapp.cc/raw/Tb28xxWC.png
 
 
 jobs:
@@ -124,8 +124,10 @@ jobs:
         run: |
           mkdir -p icons
           curl -L -o icon.png "$ICON_URL"
-          sips -z 120 120 icon.png --out icons/RetributionIcon60x60@2x.png
-          sips -z 152 152 icon.png --out icons/RetributionIcon76x76@2x~ipad.png
+          sips -Z 120 icon.png --out icon-120.png
+          sips -p 120 120 --padColor 000000 icon-120.png --out icons/RetributionIcon60x60@2x.png
+          sips -Z 152 icon.png --out icon-152.png
+          sips -p 152 152 --padColor 000000 icon-152.png --out icons/RetributionIcon76x76@2x~ipad.png
           zip -j ipa-icons.zip icons/*
 
       - name: Extract Values
