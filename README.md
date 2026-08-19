@@ -17,7 +17,7 @@
            <img height="32px" src="assets/logo/logo-light.svg" />
        </picture>
    </a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-   <a href="https://discord.com/invite/ddcQf3s2Uq">
+   <a href="https://discord.gg/7CWcwZZGWr">
        <picture>
            <source height="32px" media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/13122796/178032563-d4e084b7-244e-4358-af50-26bde6dd4996.png" />
            <img height="32px" src="https://user-images.githubusercontent.com/13122796/178032563-d4e084b7-244e-4358-af50-26bde6dd4996.png" />
@@ -38,7 +38,7 @@
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Retribution-Mod/retribution-tweak/deploy.yml)
 ![Open Software License 3](https://img.shields.io/badge/License-OSL%20v3-yellow.svg)
 
-Tweak to inject [Retribution](https://github.com/Retribution-Mod/retribution-bundle) into Discord. Forked [BunnyTweak](https://github.com/pyoncord/BunnyTweak), modified to match with [retribution-xposed](https://github.com/Retribution-Mod/retribution-xposed) behavior. There are still slight differences between these two, and this tweak may be missing some loader features.
+Tweak to inject the [Retribution bundle](https://github.com/Retribution-Mod/Retribution) into Discord on iOS, adapted to match [retribution-xposed](https://github.com/Retribution-Mod/retribution-xposed) behavior.
 
 > [!NOTE]
 > As of right now this tweak does not encompass some functionalities when running in a jailed environment with a wildcard certificate \
@@ -61,15 +61,21 @@ Builds can be found in the [Releases](https://github.com/Retribution-Mod/retribu
 
 ### Jailed
 
-<a href="https://tinyurl.com/2jyk87mz"><img src="https://i.imgur.com/dsbDLK9.png" width="230"></a>
-<a href="https://tinyurl.com/yjn8fpp3"><img src="https://i.imgur.com/46qhEAv.png" width="230"></a>
+1. Download [Retribution.ipa](https://github.com/Retribution-Mod/retribution-tweak/releases/latest/download/Retribution.ipa).
+2. Install it with a sideloading app.
+   - Recommended: [SideStore](https://sidestore.io)
+   - Alternative: [AltStore](https://altstore.io)
 
 > [!NOTE]
 > TrollStore may display an encryption warning, which you can disregard.
 
-1. Download and install [Retribution.ipa](https://github.com/Retribution-Mod/retribution-tweak/releases/latest/download/Retribution.ipa) using your preferred sideloading method.
+## � Add-ons
 
-## 🛠️ Building retribution-tweak locally
+- **Plugins**: https://plugins-list.pages.dev or the [Plugin List plugin](https://purple-eyez.github.io/Plugins-List_Plugin/plugins-list/)
+- **Themes**: available in the Plugin List
+- **Fonts**: https://bunny-google-fonts.vercel.app/
+
+## �🛠️ Building retribution-tweak locally
 
 > [!NOTE]
 > These steps assume you use MacOS.
