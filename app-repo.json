@@ -14,6 +14,12 @@
       "versions": [
         {
           "version": "340.0",
+          "date": "2026-08-20",
+          "size": 95787955,
+          "downloadURL": "https://github.com/Retribution-Mod/retribution-tweak/releases/download/v340.0/Retribution.ipa"
+        },
+        {
+          "version": "340.0",
           "date": "2026-08-19",
           "size": 97818560,
           "downloadURL": "https://github.com/Retribution-Mod/retribution-tweak/releases/download/v340.0/Retribution.ipa"
