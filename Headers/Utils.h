@@ -10,8 +10,15 @@ UIColor *hexToUIColor(NSString *hex);
 void showErrorAlert(NSString *title, NSString *message);
 
 /**
- * Reads the Hermes bytecode header version from a file, or 0 if the file isn't Hermes bytecode
- * (e.g. plain JS source) or is too short to contain a header.
+ * Reads the Hermes bytecode header version from in-memory data, or 0 if the data isn't Hermes
+ * bytecode (e.g. plain JS source) or is too short to contain a header. This is the single source
+ * of truth for "is this Hermes bytecode" - JSI.mm's evaluator uses it too, so bytecode detection
+ * can never silently diverge between the two again.
+ */
+uint32_t hermesBytecodeVersionOfData(NSData *data);
+
+/**
+ * Same as hermesBytecodeVersionOfData, but reads from a file on disk.
  */
 uint32_t hermesBytecodeVersionOfFile(NSString *path);
 

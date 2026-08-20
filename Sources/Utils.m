@@ -44,22 +44,26 @@ UIColor *hexToUIColor(NSString *hex) {
     return nil;
 }
 
-uint32_t hermesBytecodeVersionOfFile(NSString *path) {
+uint32_t hermesBytecodeVersionOfData(NSData *data) {
     static const uint8_t HERMES_MAGIC[8] = {0xc6, 0x1f, 0xbc, 0x03, 0xc1, 0x03, 0x19, 0x1f};
 
-    NSFileHandle *handle = [NSFileHandle fileHandleForReadingAtPath:path];
-    if (!handle) return 0;
+    if (data.length < 12) return 0;
 
-    NSData *header = [handle readDataOfLength:12];
-    [handle closeFile];
-    if (header.length < 12) return 0;
-
-    const uint8_t *bytes = (const uint8_t *)header.bytes;
+    const uint8_t *bytes = (const uint8_t *)data.bytes;
     if (memcmp(bytes, HERMES_MAGIC, sizeof(HERMES_MAGIC)) != 0) return 0;
 
     uint32_t version;
     memcpy(&version, bytes + 8, sizeof(version));
     return CFSwapInt32LittleToHost(version);
+}
+
+uint32_t hermesBytecodeVersionOfFile(NSString *path) {
+    NSFileHandle *handle = [NSFileHandle fileHandleForReadingAtPath:path];
+    if (!handle) return 0;
+
+    NSData *header = [handle readDataOfLength:12];
+    [handle closeFile];
+    return hermesBytecodeVersionOfData(header);
 }
 
 void showErrorAlert(NSString *title, NSString *message) {
