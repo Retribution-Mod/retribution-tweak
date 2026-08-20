@@ -264,12 +264,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ipa-old
+          path: ipa-old
         if: ${{ env.OLD_VERSION != '' }}
 
       - name: Download IPA artifacts (new)
         uses: actions/download-artifact@v4
         with:
           name: ipa-new
+          path: ipa-new
         if: ${{ env.NEW_VERSION != '' }}
 
       - name: Update app-repo.json
@@ -278,16 +280,16 @@ jobs:
           REPO=${{ github.repository }}
 
           # Old variant (340.x)
-          if [ -n "$OLD_VERSION" ] && [ -f ${{ env.APP_NAME }}.ipa ]; then
-            IPA_SIZE=$(ls -l ${{ env.APP_NAME }}.ipa | awk '{print $5}')
+          if [ -n "$OLD_VERSION" ] && [ -f ipa-old/${{ env.APP_NAME }}.ipa ]; then
+            IPA_SIZE=$(ls -l ipa-old/${{ env.APP_NAME }}.ipa | awk '{print $5}')
             DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$OLD_VERSION/${{ env.APP_NAME }}-old.ipa"
             NEW_ENTRY=$(jq -n --arg version "$OLD_VERSION" --arg date "$DATE" --arg size "$IPA_SIZE" --arg downloadURL "$DOWNLOAD_URL" '{version: $version, date: $date, size: ($size | tonumber), downloadURL: $downloadURL, label: "old"}')
             jq --argjson newEntry "$NEW_ENTRY" '(.apps[0].versions |= map(select(.label != "old"))) | .apps[0].versions |= [$newEntry] + .' app-repo.json > temp.json && mv temp.json app-repo.json
           fi
 
           # New variant (341.x+)
-          if [ -n "$NEW_VERSION" ] && [ -f ${{ env.APP_NAME }}.ipa ]; then
-            IPA_SIZE=$(ls -l ${{ env.APP_NAME }}.ipa | awk '{print $5}')
+          if [ -n "$NEW_VERSION" ] && [ -f ipa-new/${{ env.APP_NAME }}.ipa ]; then
+            IPA_SIZE=$(ls -l ipa-new/${{ env.APP_NAME }}.ipa | awk '{print $5}')
             DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$NEW_VERSION/${{ env.APP_NAME }}-new.ipa"
             NEW_ENTRY=$(jq -n --arg version "$NEW_VERSION" --arg date "$DATE" --arg size "$IPA_SIZE" --arg downloadURL "$DOWNLOAD_URL" '{version: $version, date: $date, size: ($size | tonumber), downloadURL: $downloadURL, label: "new"}')
             jq --argjson newEntry "$NEW_ENTRY" '(.apps[0].versions |= map(select(.label != "new"))) | .apps[0].versions |= [$newEntry] + .' app-repo.json > temp.json && mv temp.json app-repo.json

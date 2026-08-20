@@ -8,6 +8,11 @@
 #import "Fonts.h"
 #import "RCTHost.h"
 
+// Discord >= 341 runs the new (Fabric/bridgeless) architecture, which embeds Hermes bytecode
+// format 98. A preload asset compiled for the old architecture's HBC 96 (e.g. cached on a device
+// that later switched Discord versions) would otherwise fail silently when evaluated - see JSI.mm.
+static const uint32_t EXPECTED_HBC_VERSION = 98;
+
 %group RCTHostGroup
 
 %hook RCTHost
@@ -130,6 +135,13 @@
         if (!error) {
             for (NSURL *fileURL in contents) {
                 if ([[fileURL pathExtension] isEqualToString:@"js"]) {
+                    uint32_t hbcVersion = hermesBytecodeVersionOfFile(fileURL.path);
+                    if (hbcVersion != 0 && hbcVersion != EXPECTED_HBC_VERSION) {
+                        RetributionLog(@"Removing incompatible preload (HBC %u, expected %u): %@", hbcVersion, EXPECTED_HBC_VERSION, fileURL.path);
+                        [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
+                        continue;
+                    }
+
                     NSData *data = [NSData dataWithContentsOfURL:fileURL];
                     if (data) {
                         [JSI evaluate:data tag:fileURL.path runtime:runtime];

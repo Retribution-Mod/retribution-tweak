@@ -12,6 +12,11 @@ static NSString *retributionPatchesBundlePath;
 static NSURL *pyoncordDirectory;
 static LoaderConfig *loaderConfig;
 
+// Discord < 341 runs the old (non-Fabric) bridge, which embeds Hermes bytecode format 96. A
+// preload asset compiled for the new architecture's HBC 98 (e.g. cached on a device that later
+// switched Discord versions) would otherwise fail silently when evaluated - see JSI.mm.
+static const uint32_t EXPECTED_HBC_VERSION = 96;
+
 %group RCTCxxBridgeGroup
 
 %hook RCTCxxBridge
@@ -140,6 +145,13 @@ static LoaderConfig *loaderConfig;
         if (!error) {
             for (NSURL *fileURL in contents) {
                 if ([[fileURL pathExtension] isEqualToString:@"js"]) {
+                    uint32_t hbcVersion = hermesBytecodeVersionOfFile(fileURL.path);
+                    if (hbcVersion != 0 && hbcVersion != EXPECTED_HBC_VERSION) {
+                        RetributionLog(@"Removing incompatible preload (HBC %u, expected %u): %@", hbcVersion, EXPECTED_HBC_VERSION, fileURL.absoluteString);
+                        [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
+                        continue;
+                    }
+
                     RetributionLog(@"Executing preload JS file %@", fileURL.absoluteString);
                     NSData *data = [NSData dataWithContentsOfURL:fileURL];
                     if (data) {

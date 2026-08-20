@@ -1,5 +1,6 @@
 #import "JSI.h"
 #import "Logger.h"
+#import "Utils.h"
 
 using namespace facebook;
 
@@ -21,12 +22,6 @@ private:
     NSData *data_;
 };
 
-BOOL isHermesBytecode(NSData *data) {
-    if (data.length < 4) return NO;
-    const uint8_t *bytes = (const uint8_t *)data.bytes;
-    return bytes[0] == 0x48 && bytes[1] == 0x65 && bytes[2] == 0x72 && bytes[3] == 0x6d;
-}
-
 }
 
 @implementation JSI
@@ -39,7 +34,7 @@ BOOL isHermesBytecode(NSData *data) {
     try {
         std::string sourceUrl(tag.UTF8String ?: "");
 
-        if (isHermesBytecode(scriptData)) {
+        if (hermesBytecodeVersionOfData(scriptData) != 0) {
             auto buffer = std::make_shared<NSDataBuffer>(scriptData);
             auto prepared = runtime.prepareJavaScript(buffer, sourceUrl);
             runtime.evaluatePreparedJavaScript(prepared);
