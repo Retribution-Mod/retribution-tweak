@@ -193,54 +193,6 @@ jobs:
           echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Determine unique release tags
-        if: ${{ env.OLD_VERSION != '' || env.NEW_VERSION != '' }}
-        run: |
-          next_tag() {
-            version="$1"
-            base="v$version"
-            max_n=0
-            for tag in $(git ls-remote --tags origin "refs/tags/${base}*" | sed 's/.*\///'); do
-              if [ "$tag" = "$base" ]; then
-                max_n=1
-              elif [[ "$tag" =~ ^${base}-([0-9]+)$ ]]; then
-                n=${BASH_REMATCH[1]}
-                next=$((n + 1))
-                if [ "$next" -gt "$max_n" ]; then
-                  max_n=$next
-                fi
-              fi
-            done
-            if [ "$max_n" -eq 0 ]; then
-              echo "$base"
-            else
-              echo "${base}-${max_n}"
-            fi
-          }
-
-          mkdir -p tags
-
-          if [ -n "$OLD_VERSION" ]; then
-            OLD_TAG=$(next_tag "$OLD_VERSION")
-            echo "OLD_TAG=$OLD_TAG" >> $GITHUB_ENV
-            echo "$OLD_TAG" > tags/old.txt
-            echo "Old release tag: $OLD_TAG"
-          fi
-
-          if [ -n "$NEW_VERSION" ]; then
-            NEW_TAG=$(next_tag "$NEW_VERSION")
-            echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-            echo "$NEW_TAG" > tags/new.txt
-            echo "New release tag: $NEW_TAG"
-          fi
-
-      - name: Upload tag artifacts
-        if: ${{ env.OLD_VERSION != '' || env.NEW_VERSION != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: tags
-          path: tags/*.txt
-
       - name: Rename IPAs by variant
         run: |
           if [ -f ipa-old/${{ env.APP_NAME }}.ipa ]; then
@@ -251,11 +203,10 @@ jobs:
           fi
 
       - name: Create GitHub Release (old)
-        if: ${{ env.OLD_TAG != '' }}
+        if: ${{ env.OLD_VERSION != '' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.OLD_TAG }}
-          name: ${{ env.OLD_TAG }} — Retribution for Discord ${{ env.OLD_VERSION }}
+          tag_name: v${{ env.OLD_VERSION }}
           files: |
             ${{ env.DEB_FILE_NAME }}
             ${{ env.ROOTLESS_DEB_FILE_NAME }}
@@ -267,11 +218,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release (new)
-        if: ${{ env.NEW_TAG != '' }}
+        if: ${{ env.NEW_VERSION != '' }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.NEW_TAG }}
-          name: ${{ env.NEW_TAG }} — Retribution for Discord ${{ env.NEW_VERSION }}
+          tag_name: v${{ env.NEW_VERSION }}
           files: |
             ${{ env.DEB_FILE_NAME }}
             ${{ env.ROOTLESS_DEB_FILE_NAME }}
@@ -298,27 +248,17 @@ jobs:
           NAME=$(grep '^Name:' control | cut -d ' ' -f 2)
           echo "APP_NAME=$NAME" >> $GITHUB_ENV
 
-      - name: Download version and tag artifacts
+      - name: Download version artifacts
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
 
-      - name: Read Discord versions and tags
+      - name: Read Discord versions
         run: |
           OLD_VERSION=$(plutil -p version-old/Info.plist | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
           NEW_VERSION=$(plutil -p version-new/Info.plist | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
           echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
-          if [ -f tags/old.txt ]; then
-            OLD_TAG=$(cat tags/old.txt)
-            echo "OLD_TAG=$OLD_TAG" >> $GITHUB_ENV
-          fi
-
-          if [ -f tags/new.txt ]; then
-            NEW_TAG=$(cat tags/new.txt)
-            echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-          fi
 
       - name: Download IPA artifacts
         uses: actions/download-artifact@v4
@@ -340,17 +280,17 @@ jobs:
           REPO=${{ github.repository }}
 
           # Old variant (340.x)
-          if [ -n "$OLD_VERSION" ] && [ -f ipa-old/${{ env.APP_NAME }}.ipa ] && [ -n "$OLD_TAG" ]; then
+          if [ -n "$OLD_VERSION" ] && [ -f ipa-old/${{ env.APP_NAME }}.ipa ]; then
             IPA_SIZE=$(ls -l ipa-old/${{ env.APP_NAME }}.ipa | awk '{print $5}')
-            DOWNLOAD_URL="https://github.com/$REPO/releases/download/$OLD_TAG/${{ env.APP_NAME }}-old.ipa"
+            DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$OLD_VERSION/${{ env.APP_NAME }}-old.ipa"
             NEW_ENTRY=$(jq -n --arg version "$OLD_VERSION" --arg date "$DATE" --arg size "$IPA_SIZE" --arg downloadURL "$DOWNLOAD_URL" '{version: $version, date: $date, size: ($size | tonumber), downloadURL: $downloadURL, label: "old"}')
             jq --argjson newEntry "$NEW_ENTRY" '(.apps[0].versions |= map(select(.label != "old"))) | .apps[0].versions |= [$newEntry] + .' app-repo.json > temp.json && mv temp.json app-repo.json
           fi
 
           # New variant (341.x+)
-          if [ -n "$NEW_VERSION" ] && [ -f ipa-new/${{ env.APP_NAME }}.ipa ] && [ -n "$NEW_TAG" ]; then
+          if [ -n "$NEW_VERSION" ] && [ -f ipa-new/${{ env.APP_NAME }}.ipa ]; then
             IPA_SIZE=$(ls -l ipa-new/${{ env.APP_NAME }}.ipa | awk '{print $5}')
-            DOWNLOAD_URL="https://github.com/$REPO/releases/download/$NEW_TAG/${{ env.APP_NAME }}-new.ipa"
+            DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$NEW_VERSION/${{ env.APP_NAME }}-new.ipa"
             NEW_ENTRY=$(jq -n --arg version "$NEW_VERSION" --arg date "$DATE" --arg size "$IPA_SIZE" --arg downloadURL "$DOWNLOAD_URL" '{version: $version, date: $date, size: ($size | tonumber), downloadURL: $downloadURL, label: "new"}')
             jq --argjson newEntry "$NEW_ENTRY" '(.apps[0].versions |= map(select(.label != "new"))) | .apps[0].versions |= [$newEntry] + .' app-repo.json > temp.json && mv temp.json app-repo.json
           fi
