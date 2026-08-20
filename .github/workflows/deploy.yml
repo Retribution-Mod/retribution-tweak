@@ -29,40 +29,10 @@ jobs:
         with:
           submodules: true
 
-      - name: Download Tweak
-        run: |
-          set +e
-
-          release_info=$(gh api --header 'Accept: application/vnd.github+json' repos/${{ github.repository }}/releases/latest)
-          status_code=$(echo $release_info | jq -r ".status")
-
-          if [ "$status_code" != "null" ]; then
-            echo "No releases found or request failed, status code: $status_code"
-            echo "DEB_DOWNLOADED=false" >> $GITHUB_ENV
-            exit 0
-          fi
-
-          set -e
-
-          release_version=$(echo "$release_info" | jq -r '.assets[] | select(.name | contains("iphoneos-arm.deb")) | .name' | grep -o '_[0-9.]\+_' | tr -d '_')
-          control_version=$(grep '^Version:' control | cut -d ' ' -f 2)
-          
-          if [ "$release_version" = "$control_version" ]; then
-            echo "Versions match. Downloading DEB files..."
-            echo "$release_info" | jq -r '.assets[] | select(.name | endswith(".deb")) | .browser_download_url' | xargs -I {} curl -L -O {}
-            echo "DEB_DOWNLOADED=true" >> $GITHUB_ENV
-          else
-            echo "Versions do not match. No files will be downloaded."
-            echo "DEB_DOWNLOADED=false" >> $GITHUB_ENV
-            exit 0
-          fi
-          
       - name: Check cache
-        if: env.DEB_DOWNLOADED == 'false'
         run: echo upstream_heads=`git ls-remote https://github.com/theos/theos | head -n 1 | cut -f 1`-`git ls-remote https://github.com/theos/sdks | head -n 1 | cut -f 1` >> $GITHUB_ENV
 
       - name: Use cache
-        if: env.DEB_DOWNLOADED == 'false'
         id: cache
         uses: actions/cache@v4
         with:
@@ -70,7 +40,6 @@ jobs:
           key: ${{ runner.os }}-${{ env.upstream_heads }}
 
       - name: Prepare Theos
-        if: env.DEB_DOWNLOADED == 'false'
         uses: Randomblock1/theos-action@v1
 
       - name: Set GNU Make path
@@ -78,18 +47,12 @@ jobs:
           echo "PATH=$(brew --prefix make)/libexec/gnubin:$PATH" >> $GITHUB_ENV
 
       - name: Build packages
-        if: env.DEB_DOWNLOADED == 'false'
         run: make package FINALPACKAGE=1 && make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 
       - name: Set DEB path
         run: |
-          if [ "${{ env.DEB_DOWNLOADED }}" == "true" ]; then
-            echo "DEB_PATH=${{ github.workspace }}/*-arm.deb" >> $GITHUB_ENV
-            echo "ROOTLESS_DEB_PATH=${{ github.workspace }}/*-arm64.deb" >> $GITHUB_ENV
-          else
-            echo "DEB_PATH=${{ github.workspace }}/packages/*-arm.deb" >> $GITHUB_ENV
-            echo "ROOTLESS_DEB_PATH=${{ github.workspace }}/packages/*-arm64.deb" >> $GITHUB_ENV
-          fi
+          echo "DEB_PATH=${{ github.workspace }}/packages/*-arm.deb" >> $GITHUB_ENV
+          echo "ROOTLESS_DEB_PATH=${{ github.workspace }}/packages/*-arm64.deb" >> $GITHUB_ENV
 
       - name: Upload package
         uses: actions/upload-artifact@v4
