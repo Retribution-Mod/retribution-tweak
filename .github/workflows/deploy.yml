@@ -157,7 +157,10 @@ jobs:
 
       - name: Inject tweak
         run: |
-          cyan -duws -i discord.ipa -o ${{ github.workspace }}/${{ env.APP_NAME }}.ipa -f ${{ github.workspace }}/${{ env.DEB_FILE_NAME }}
+          cyan -duws -i discord.ipa -o ${{ github.workspace }}/${{ env.APP_NAME }}.ipa \
+            -l ${{ github.workspace }}/RetributionInfo.plist \
+            -x ${{ github.workspace }}/Retribution.entitlements \
+            -f ${{ github.workspace }}/${{ env.DEB_FILE_NAME }}
 
       - name: Upload ipa as artifact
         uses: actions/upload-artifact@v4

@@ -63,37 +63,55 @@
 
     __block NSData *bundle = nil;
 
-    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle" withExtension:@"js"];
-    if (localBundlePath) {
+    NSURL *cachedBundlePath = [pyoncordDirectory URLByAppendingPathComponent:@"bundle-new.js"];
+    bundle = [NSData dataWithContentsOfURL:cachedBundlePath];
+
+    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle-new" withExtension:@"js"];
+    if (!bundle && localBundlePath) {
         bundle = [NSData dataWithContentsOfURL:localBundlePath];
         if (bundle) {
             RetributionLog(@"Loaded embedded bundle from resources: %@", localBundlePath.absoluteString);
         }
     }
 
-    if (!bundle) {
-        bundle = [NSData dataWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"bundle.js"]];
+    NSURL *bundleUrl = loaderConfig.customLoadUrlEnabled && loaderConfig.customLoadUrl
+        ? loaderConfig.customLoadUrl
+        : [NSURL URLWithString:@"https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/retribution-new.min.js"];
+    NSMutableURLRequest *bundleRequest = [NSMutableURLRequest requestWithURL:bundleUrl
+                                                                 cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
+                                                             timeoutInterval:30.0];
+    NSString *bundleEtag = [NSString stringWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag-new.txt"]
+                                                    encoding:NSUTF8StringEncoding
+                                                       error:nil];
+    if (bundleEtag && bundle) {
+        [bundleRequest setValue:bundleEtag forHTTPHeaderField:@"If-None-Match"];
     }
 
-    if (!bundle && loaderConfig.customLoadUrlEnabled && loaderConfig.customLoadUrl) {
-        NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
-        dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-        [[session dataTaskWithURL:loaderConfig.customLoadUrl completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-            if (error) {
-                RetributionLog(@"Failed to download custom bundle: %@", error);
-            } else if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
-                NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
-                if (httpResponse.statusCode == 200) {
-                    bundle = data;
-                    [bundle writeToURL:[pyoncordDirectory URLByAppendingPathComponent:@"bundle.js"] atomically:YES];
-                } else {
-                    RetributionLog(@"Custom bundle download returned status code %ld", (long)httpResponse.statusCode);
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+    [[session dataTaskWithRequest:bundleRequest completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (error) {
+            RetributionLog(@"Failed to download bundle: %@", error);
+        } else if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+            NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+            if (httpResponse.statusCode == 200) {
+                bundle = data;
+                [bundle writeToURL:cachedBundlePath atomically:YES];
+
+                NSString *etag = [httpResponse.allHeaderFields objectForKey:@"Etag"];
+                if (etag) {
+                    [etag writeToURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag-new.txt"]
+                          atomically:YES
+                            encoding:NSUTF8StringEncoding
+                               error:nil];
                 }
+            } else if (httpResponse.statusCode != 304) {
+                RetributionLog(@"Bundle download returned status code %ld", (long)httpResponse.statusCode);
             }
-            dispatch_semaphore_signal(sem);
-        }] resume];
-        dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
-    }
+        }
+        dispatch_semaphore_signal(sem);
+    }] resume];
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
 
     if (bundle) {
         RetributionLog(@"Executing JS bundle in bridgeless runtime");

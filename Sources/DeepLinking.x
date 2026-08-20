@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 #import <substrate.h>
 #import "Utils.h"
 #import "Logger.h"
@@ -13,6 +14,14 @@ static NSString *deeplinkType(NSURL *url) {
     }
     if ([url.scheme isEqualToString:@"retribution"]) {
         return url.host;
+    }
+    if (([url.scheme isEqualToString:@"https"] || [url.scheme isEqualToString:@"http"]) && [url.path isEqualToString:@"/d"]) {
+        NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+        for (NSURLQueryItem *item in components.queryItems) {
+            if ([item.name isEqualToString:@"type"] && [@[@"bundle", @"plugin", @"theme", @"font"] containsObject:item.value]) {
+                return item.value;
+            }
+        }
     }
     return nil;
 }
@@ -130,32 +139,44 @@ static void handleDeepLink(NSURL *url) {
 static BOOL (*origOpenUrlOptions)(id, SEL, UIApplication *, NSURL *, NSDictionary<UIApplicationOpenURLOptionsKey, id> *);
 static BOOL retributionOpenUrlOptions(id self, SEL _cmd, UIApplication *app, NSURL *url, NSDictionary<UIApplicationOpenURLOptionsKey, id> *options) {
     if (url) handleDeepLink(url);
-    return origOpenUrlOptions(self, _cmd, app, url, options);
+    return origOpenUrlOptions ? origOpenUrlOptions(self, _cmd, app, url, options) : YES;
 }
 
 static BOOL (*origContinueUserActivity)(id, SEL, UIApplication *, NSUserActivity *, void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable));
 static BOOL retributionContinueUserActivity(id self, SEL _cmd, UIApplication *application, NSUserActivity *userActivity, void (^restorationHandler)(NSArray<id<UIUserActivityRestoring>> * _Nullable)) {
     if (userActivity.webpageURL) handleDeepLink(userActivity.webpageURL);
-    return origContinueUserActivity(self, _cmd, application, userActivity, restorationHandler);
+    return origContinueUserActivity ? origContinueUserActivity(self, _cmd, application, userActivity, restorationHandler) : YES;
 }
+
+static NSMutableSet<NSString *> *hookedDelegateClasses;
 
 static void hookDeepLinkDelegate(id<UIApplicationDelegate> delegate) {
     if (!delegate) return;
     Class cls = [delegate class];
+    NSString *className = NSStringFromClass(cls);
 
-    MSHookMessageEx(
-        cls,
-        @selector(application:openURL:options:),
-        (IMP)retributionOpenUrlOptions,
-        (IMP *)&origOpenUrlOptions
-    );
+    @synchronized (hookedDelegateClasses) {
+        if ([hookedDelegateClasses containsObject:className]) return;
+        [hookedDelegateClasses addObject:className];
+    }
 
-    MSHookMessageEx(
-        cls,
-        @selector(application:continueUserActivity:restorationHandler:),
-        (IMP)retributionContinueUserActivity,
-        (IMP *)&origContinueUserActivity
-    );
+    if (class_getInstanceMethod(cls, @selector(application:openURL:options:))) {
+        MSHookMessageEx(
+            cls,
+            @selector(application:openURL:options:),
+            (IMP)retributionOpenUrlOptions,
+            (IMP *)&origOpenUrlOptions
+        );
+    }
+
+    if (class_getInstanceMethod(cls, @selector(application:continueUserActivity:restorationHandler:))) {
+        MSHookMessageEx(
+            cls,
+            @selector(application:continueUserActivity:restorationHandler:),
+            (IMP)retributionContinueUserActivity,
+            (IMP *)&origContinueUserActivity
+        );
+    }
 }
 
 %group DeepLinking
@@ -173,6 +194,7 @@ static void hookDeepLinkDelegate(id<UIApplicationDelegate> delegate) {
 
 %ctor {
     @autoreleasepool {
+        hookedDelegateClasses = [NSMutableSet set];
         %init(DeepLinking);
 
         UIApplication *app = [UIApplication sharedApplication];

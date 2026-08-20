@@ -52,16 +52,6 @@ static BOOL isSelfCall(void) {
     info[@"CFBundleIdentifier"] = DISCORD_BUNDLE_ID;
     info[@"CFBundleDisplayName"] = DISCORD_NAME;
     info[@"CFBundleName"] = DISCORD_NAME;
-    info[@"CFBundleURLTypes"] = @[
-        @{
-            @"CFBundleURLName": @"io.github.retribution",
-            @"CFBundleURLSchemes": @[@"retribution", @"plugin", @"theme", @"font"]
-        }
-    ];
-    info[@"com.apple.developer.associated-domains"] = @[
-        @"applinks:retribution-mod.github.io",
-        @"applinks:retribution-website.allyapp.workers.dev"
-    ];
     return info;
 }
 

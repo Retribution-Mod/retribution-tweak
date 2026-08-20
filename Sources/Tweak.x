@@ -41,16 +41,15 @@ static LoaderConfig *loaderConfig;
 
     __block NSData *bundle = nil;
 
-    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle" withExtension:@"js"];
-    if (localBundlePath) {
+    NSURL *cachedBundlePath = [pyoncordDirectory URLByAppendingPathComponent:@"bundle-old.js"];
+    bundle = [NSData dataWithContentsOfURL:cachedBundlePath];
+
+    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle-old" withExtension:@"js"];
+    if (!bundle && localBundlePath) {
         bundle = [NSData dataWithContentsOfURL:localBundlePath];
         if (bundle) {
             RetributionLog(@"Loaded embedded bundle from resources: %@", localBundlePath.absoluteString);
         }
-    }
-
-    if (!bundle) {
-        bundle = [NSData dataWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"bundle.js"]];
     }
 
     dispatch_group_t group = dispatch_group_create();
@@ -61,7 +60,7 @@ static LoaderConfig *loaderConfig;
         bundleUrl = loaderConfig.customLoadUrl;
         RetributionLog(@"Using custom load URL: %@", bundleUrl.absoluteString);
     } else {
-        bundleUrl = [NSURL URLWithString:@"https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/retribution.min.js"];
+        bundleUrl = [NSURL URLWithString:@"https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/retribution-old.min.js"];
         RetributionLog(@"Using default bundle URL: %@", bundleUrl.absoluteString);
     }
 
@@ -69,7 +68,7 @@ static LoaderConfig *loaderConfig;
                                                                cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
                                                            timeoutInterval:30.0];
 
-    NSString *bundleEtag = [NSString stringWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag.txt"]
+    NSString *bundleEtag = [NSString stringWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag-old.txt"]
                                                    encoding:NSUTF8StringEncoding
                                                       error:nil];
     if (bundleEtag && bundle) {
@@ -84,11 +83,11 @@ static LoaderConfig *loaderConfig;
             NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
             if (httpResponse.statusCode == 200) {
                 bundle = data;
-                [bundle writeToURL:[pyoncordDirectory URLByAppendingPathComponent:@"bundle.js"] atomically:YES];
+                [bundle writeToURL:cachedBundlePath atomically:YES];
 
                 NSString *etag = [httpResponse.allHeaderFields objectForKey:@"Etag"];
                 if (etag) {
-                    [etag writeToURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag.txt"]
+                    [etag writeToURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag-old.txt"]
                          atomically:YES
                            encoding:NSUTF8StringEncoding
                               error:nil];
