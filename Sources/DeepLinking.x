@@ -106,7 +106,21 @@ static void showDeeplinkAlert(NSString *type) {
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
 
-    UIViewController *root = [UIApplication sharedApplication].keyWindow.rootViewController;
+    UIApplication *application = [UIApplication sharedApplication];
+    UIWindow *keyWindow = nil;
+    for (UIScene *scene in application.connectedScenes) {
+        if (![scene isKindOfClass:[UIWindowScene class]] || scene.activationState != UISceneActivationStateForegroundActive) continue;
+        for (UIWindow *window in ((UIWindowScene *)scene).windows) {
+            if (window.isKeyWindow) {
+                keyWindow = window;
+                break;
+            }
+        }
+        if (keyWindow) break;
+    }
+    keyWindow = keyWindow ?: application.delegate.window;
+
+    UIViewController *root = keyWindow.rootViewController;
     if (root) {
         [root presentViewController:alert animated:YES completion:nil];
     }
