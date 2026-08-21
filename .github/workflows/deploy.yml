@@ -188,8 +188,8 @@ jobs:
 
       - name: Read Discord versions from artifacts
         run: |
-          OLD_VERSION=$(plutil -p version-old/Info.plist | grep CFBundleShortVersionString | sed -n 's/.*"\\([^\"]*\\)".*/\1/p' || echo "")
-          NEW_VERSION=$(plutil -p version-new/Info.plist | grep CFBundleShortVersionString | sed -n 's/.*"\\([^\"]*\\)".*/\1/p' || echo "")
+          OLD_VERSION=$(plutil -p version-old/Info.plist | grep CFBundleShortVersionString | awk -F '"' '{print $2}' || echo "")
+          NEW_VERSION=$(plutil -p version-new/Info.plist | grep CFBundleShortVersionString | awk -F '"' '{print $2}' || echo "")
           echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
