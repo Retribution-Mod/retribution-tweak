@@ -59,8 +59,7 @@ Builds can be found in the [Releases](https://github.com/Retribution-Mod/retribu
 
 ### Jailbroken
 
-1. Install the Orion runtime via your preferred package manager, by adding `https://repo.chariz.com/` to your sources, then finding `Orion Runtime`.
-1. Install Retribution by downloading the appropriate Debian package (or by building your own, see [Building retribution-tweak locally](#building-retributiontweak-locally)) and adding it to your package manager. Use the file ending in `arm.deb` for rootful jailbreaks, and the file ending in `arm64.deb` for rootless jailbreaks.
+1. Install the appropriate Debian package in your preferred package manager. Use the file ending in `arm.deb` for rootful jailbreaks, and the file ending in `arm64.deb` for rootless jailbreaks. You can build your own by following the [Building retribution-tweak locally](#building-retributiontweak-locally) steps below.
 
 ### Jailed
 
