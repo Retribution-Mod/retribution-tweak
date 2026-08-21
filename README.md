@@ -40,6 +40,9 @@
 
 Tweak to inject the [Retribution bundle](https://github.com/Retribution-Mod/retribution-bundle) into Discord on iOS, adapted to match [retribution-xposed](https://github.com/Retribution-Mod/retribution-xposed) behavior.
 
+> [!IMPORTANT]
+> This project is a derivative of [RainTweak](https://github.com/ra1ncord/RainTweak) by [ra1ncord](https://github.com/ra1ncord). The original work and this project are licensed under the Open Software License ("OSL") v. 3.0. See [ATTRIBUTION.md](ATTRIBUTION.md) for full credit and license details.
+
 > [!NOTE]
 > As of right now this tweak does not encompass some functionalities when running in a jailed environment with a wildcard certificate \
 > If you value these features sign the application with a local dev certificate:

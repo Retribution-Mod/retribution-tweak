@@ -2,9 +2,9 @@ Package: io.github.retribution-mod.app
 Name: Retribution
 Version: 2.0.4
 Architecture: iphoneos-arm
-Description: A mod for Discord's mobile apps.
+Description: A mod for Discord's mobile apps. Based on RainTweak by ra1ncord.
 Maintainer: Cristiandis
-Author: Pylix, Adrian Castro, FieryFlames, Cristiandis
+Author: ra1ncord (RainTweak), Pylix, Adrian Castro, FieryFlames, Cristiandis (Retribution modifications)
 Icon: https://avatars.githubusercontent.com/u/159218871
 Section: Tweaks
 Depends: mobilesubstrate (>= 0.9.5000)
