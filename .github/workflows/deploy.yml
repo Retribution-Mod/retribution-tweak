@@ -45,7 +45,7 @@ jobs:
           key: ${{ runner.os }}-${{ env.upstream_heads }}
 
       - name: Prepare Theos
-        uses: Randomblock1/theos-action@v1
+        uses: Randomblock1/theos-action@4e23d15886bca77b5f7c462a82567e0de33ebe0b # v1
 
       - name: Set GNU Make path
         run: |
@@ -204,7 +204,7 @@ jobs:
 
       - name: Create GitHub Release (old)
         if: ${{ env.OLD_VERSION != '' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v${{ env.OLD_VERSION }}
           files: |
@@ -219,7 +219,7 @@ jobs:
 
       - name: Create GitHub Release (new)
         if: ${{ env.NEW_VERSION != '' }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v${{ env.NEW_VERSION }}
           files: |
@@ -295,7 +295,7 @@ jobs:
             jq --argjson newEntry "$NEW_ENTRY" '(.apps[0].versions |= map(select(.label != "new"))) | .apps[0].versions |= [$newEntry] + .' app-repo.json > temp.json && mv temp.json app-repo.json
           fi
 
-      - uses: EndBug/add-and-commit@v9
+      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
         with:
           default_author: github_actions
           message: "chore: update app-repo.json"
