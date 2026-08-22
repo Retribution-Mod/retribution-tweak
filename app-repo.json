@@ -14,15 +14,15 @@
       "versions": [
         {
           "version": "341.0",
-          "date": "2026-08-18",
-          "size": 107490214,
+          "date": "2026-08-22",
+          "size": 107732244,
           "downloadURL": "https://github.com/Retribution-Mod/retribution-tweak/releases/download/v341.0/Retribution-new.ipa",
           "label": "new"
         },
         {
           "version": "340.0",
-          "date": "2026-08-20",
-          "size": 95787955,
+          "date": "2026-08-22",
+          "size": 95760824,
           "downloadURL": "https://github.com/Retribution-Mod/retribution-tweak/releases/download/v340.0/Retribution-old.ipa",
           "label": "old"
         }
