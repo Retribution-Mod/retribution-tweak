@@ -195,8 +195,8 @@ jobs:
         run: |
           OLD_PLIST=$(find version-old -name Info.plist | head -n 1)
           NEW_PLIST=$(find version-new -name Info.plist | head -n 1)
-          OLD_VERSION=$(plutil -p "$OLD_PLIST" | grep CFBundleShortVersionString | awk -F '"' '{print $2}' || echo "")
-          NEW_VERSION=$(plutil -p "$NEW_PLIST" | grep CFBundleShortVersionString | awk -F '"' '{print $2}' || echo "")
+          OLD_VERSION=$(plutil -p "$OLD_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
+          NEW_VERSION=$(plutil -p "$NEW_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
           echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
