@@ -12,10 +12,10 @@ static NSString *retributionPatchesBundlePath;
 static NSURL *pyoncordDirectory;
 static LoaderConfig *loaderConfig;
 
-// Discord < 341 runs the old (non-Fabric) bridge, which embeds Hermes bytecode format 96. A
-// preload asset compiled for the new architecture's HBC 98 (e.g. cached on a device that later
-// switched Discord versions) would otherwise fail silently when evaluated - see JSI.mm.
-static const uint32_t EXPECTED_HBC_VERSION = 96;
+// Discord < 341 runs the old (non-Fabric) bridge, which embeds Hermes bytecode format 96.
+// Discord >= 341 (Fabric / new architecture) uses HBC 98. These are set once in %ctor.
+static BOOL isNewArch = NO;
+static uint32_t expectedHbcVersion = 96;
 
 %group RCTCxxBridgeGroup
 
@@ -46,10 +46,12 @@ static const uint32_t EXPECTED_HBC_VERSION = 96;
 
     __block NSData *bundle = nil;
 
-    NSURL *cachedBundlePath = [pyoncordDirectory URLByAppendingPathComponent:@"bundle-old.js"];
+    NSString *bundleSuffix = isNewArch ? @"new" : @"old";
+
+    NSURL *cachedBundlePath = [pyoncordDirectory URLByAppendingPathComponent:[NSString stringWithFormat:@"bundle-%@.js", bundleSuffix]];
     bundle = [NSData dataWithContentsOfURL:cachedBundlePath];
 
-    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle-old" withExtension:@"js"];
+    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:[NSString stringWithFormat:@"bundle-%@", bundleSuffix] withExtension:@"js"];
     if (!bundle && localBundlePath) {
         bundle = [NSData dataWithContentsOfURL:localBundlePath];
         if (bundle) {
@@ -65,7 +67,8 @@ static const uint32_t EXPECTED_HBC_VERSION = 96;
         bundleUrl = loaderConfig.customLoadUrl;
         RetributionLog(@"Using custom load URL: %@", bundleUrl.absoluteString);
     } else {
-        bundleUrl = [NSURL URLWithString:@"https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/retribution-old.min.js"];
+        NSString *bundleFile = [NSString stringWithFormat:@"retribution-%@.min.js", bundleSuffix];
+        bundleUrl = [NSURL URLWithString:[NSString stringWithFormat:@"https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/%@", bundleFile]];
         RetributionLog(@"Using default bundle URL: %@", bundleUrl.absoluteString);
     }
 
@@ -73,7 +76,8 @@ static const uint32_t EXPECTED_HBC_VERSION = 96;
                                                                cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
                                                            timeoutInterval:30.0];
 
-    NSString *bundleEtag = [NSString stringWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag-old.txt"]
+    NSString *etagName = [NSString stringWithFormat:@"etag-%@.txt", bundleSuffix];
+    NSString *bundleEtag = [NSString stringWithContentsOfURL:[pyoncordDirectory URLByAppendingPathComponent:etagName]
                                                    encoding:NSUTF8StringEncoding
                                                       error:nil];
     if (bundleEtag && bundle) {
@@ -92,7 +96,8 @@ static const uint32_t EXPECTED_HBC_VERSION = 96;
 
                 NSString *etag = [httpResponse.allHeaderFields objectForKey:@"Etag"];
                 if (etag) {
-                    [etag writeToURL:[pyoncordDirectory URLByAppendingPathComponent:@"etag-old.txt"]
+                    NSString *etagName = [NSString stringWithFormat:@"etag-%@.txt", bundleSuffix];
+                    [etag writeToURL:[pyoncordDirectory URLByAppendingPathComponent:etagName]
                          atomically:YES
                            encoding:NSUTF8StringEncoding
                               error:nil];
@@ -146,8 +151,8 @@ static const uint32_t EXPECTED_HBC_VERSION = 96;
             for (NSURL *fileURL in contents) {
                 if ([[fileURL pathExtension] isEqualToString:@"js"]) {
                     uint32_t hbcVersion = hermesBytecodeVersionOfFile(fileURL.path);
-                    if (hbcVersion != 0 && hbcVersion != EXPECTED_HBC_VERSION) {
-                        RetributionLog(@"Removing incompatible preload (HBC %u, expected %u): %@", hbcVersion, EXPECTED_HBC_VERSION, fileURL.absoluteString);
+                    if (hbcVersion != 0 && hbcVersion != expectedHbcVersion) {
+                        RetributionLog(@"Removing incompatible preload (HBC %u, expected %u): %@", hbcVersion, expectedHbcVersion, fileURL.absoluteString);
                         [[NSFileManager defaultManager] removeItemAtURL:fileURL error:nil];
                         continue;
                     }
@@ -210,8 +215,12 @@ pyoncordDirectory = getPyoncordDirectory();
             newArchEnabled = [rawValue boolValue];
         }
 
+        isNewArch = newArchEnabled;
+        expectedHbcVersion = isNewArch ? 98 : 96;
+        RetributionLog(@"Architecture selected: %@ (expected HBC version %u)", isNewArch ? @"new" : @"old", expectedHbcVersion);
+
         Class cls = objc_getClass("RCTCxxBridge");
-        if (!newArchEnabled && cls) {
+        if (cls) {
             %init(RCTCxxBridgeGroup, RCTCxxBridge = cls);
         }
     }
