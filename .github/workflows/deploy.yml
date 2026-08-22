@@ -184,7 +184,12 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          merge-multiple: true
+          path: .
+
+      - name: Flatten downloaded packages
+        run: |
+          mv package/* . 2>/dev/null || true
+          mv "rootless package"/* . 2>/dev/null || true
 
       - name: Read Discord versions from artifacts
         run: |
@@ -253,12 +258,14 @@ jobs:
       - name: Download version artifacts
         uses: actions/download-artifact@v4
         with:
-          merge-multiple: true
+          path: .
 
       - name: Read Discord versions
         run: |
-          OLD_VERSION=$(plutil -p version-old/Info.plist | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
-          NEW_VERSION=$(plutil -p version-new/Info.plist | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
+          OLD_PLIST=$(find version-old -name Info.plist | head -n 1)
+          NEW_PLIST=$(find version-new -name Info.plist | head -n 1)
+          OLD_VERSION=$(plutil -p "$OLD_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
+          NEW_VERSION=$(plutil -p "$NEW_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
           echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
