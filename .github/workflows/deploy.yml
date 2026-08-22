@@ -1,16 +1,11 @@
 name: Deploy
-run-name: ${{ github.event.inputs.release == 'true' && 'Release' || 'Build' }} for ${{ github.event.inputs.ipa_url_old && github.event.inputs.ipa_url_new && 'old + new' || github.event.inputs.ipa_url_old && 'old' || 'new' }}
+run-name: ${{ github.event.inputs.release == 'true' && 'Release' || 'Build' }} for ${{ github.event.inputs.ipa_url }}
 
 on:
    workflow_dispatch:
     inputs:
-        ipa_url_old:
-            description: "Direct link to the decrypted IPA for Discord 340.x (old arch)"
-            default: "https://i.allyapp.cc/raw/com.hammerandchisel.discord_340.0_und3fined.ipa"
-            required: false
-            type: string
-        ipa_url_new:
-            description: "Direct link to the decrypted IPA for Discord 341.x+ (new arch)"
+        ipa_url:
+            description: "Direct link to the decrypted IPA for Discord 341.x+"
             default: "https://i.allyapp.cc/raw/com.hammerandchisel.discord_341.0_und3fined.ipa"
             required: false
             type: string
@@ -74,19 +69,8 @@ jobs:
   build-ipa:
     runs-on: macos-14
     needs: build-tweak
-    strategy:
-      matrix:
-        include:
-          - variant: old
-            ipa_url: ${{ github.event.inputs.ipa_url_old }}
-          - variant: new
-            ipa_url: ${{ github.event.inputs.ipa_url_new }}
 
     steps:
-      - name: Skip if no URL for this variant
-        if: ${{ matrix.ipa_url == '' }}
-        run: echo "No IPA URL provided for ${{ matrix.variant }} variant, skipping" && exit 0
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -97,7 +81,7 @@ jobs:
 
       - name: Download Discord IPA
         run: |
-          curl -L -o discord.ipa "${{ matrix.ipa_url }}"
+          curl -L -o discord.ipa "${{ github.event.inputs.ipa_url || inputs.ipa_url }}"
 
       - name: Create IPA icons
         run: |
@@ -150,13 +134,13 @@ jobs:
       - name: Upload ipa as artifact
         uses: actions/upload-artifact@v4
         with:
-            name: ipa-${{ matrix.variant }}
+            name: ipa
             path: ${{ github.workspace }}/${{ env.APP_NAME }}.ipa
 
       - name: Upload version info
         uses: actions/upload-artifact@v4
         with:
-            name: version-${{ matrix.variant }}
+            name: version
             path: ${{ github.workspace }}/Payload/Discord.app/Info.plist
 
   release-app:
@@ -191,48 +175,34 @@ jobs:
           mv package/* . 2>/dev/null || true
           mv "rootless package"/* . 2>/dev/null || true
 
-      - name: Read Discord versions from artifacts
+      - name: Read Discord version from artifacts
         run: |
-          OLD_PLIST=$(find version-old -name Info.plist | head -n 1)
-          NEW_PLIST=$(find version-new -name Info.plist | head -n 1)
-          OLD_VERSION=$(plutil -p "$OLD_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
-          NEW_VERSION=$(plutil -p "$NEW_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
-          echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          PLIST=$(find version -name Info.plist | head -n 1)
+          DISCORD_VERSION=$(plutil -p "$PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4)
+          echo "DISCORD_VERSION=$DISCORD_VERSION" >> $GITHUB_ENV
 
-      - name: Rename IPAs by variant
+      - name: Rename IPA
         run: |
-          if [ -f ipa-old/${{ env.APP_NAME }}.ipa ]; then
-            mv ipa-old/${{ env.APP_NAME }}.ipa ${{ env.APP_NAME }}-old.ipa
-          fi
-          if [ -f ipa-new/${{ env.APP_NAME }}.ipa ]; then
-            mv ipa-new/${{ env.APP_NAME }}.ipa ${{ env.APP_NAME }}-new.ipa
+          if [ -f ipa/${{ env.APP_NAME }}.ipa ]; then
+            mv ipa/${{ env.APP_NAME }}.ipa ${{ env.APP_NAME }}.ipa
           fi
 
-      - name: Create GitHub Release (old)
-        if: ${{ env.OLD_VERSION != '' }}
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
-        with:
-          tag_name: v${{ env.OLD_VERSION }}
-          files: |
-            ${{ env.DEB_FILE_NAME }}
-            ${{ env.ROOTLESS_DEB_FILE_NAME }}
-            ${{ env.APP_NAME }}-old.ipa
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          token: ${{ env.GH_TOKEN }}
+      - name: Delete existing release
+        run: |
+          if gh release view "v${{ env.DISCORD_VERSION }}" >/dev/null 2>&1; then
+            gh release delete "v${{ env.DISCORD_VERSION }}" --yes
+          fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release (new)
-        if: ${{ env.NEW_VERSION != '' }}
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
-          tag_name: v${{ env.NEW_VERSION }}
+          tag_name: v${{ env.DISCORD_VERSION }}
           files: |
             ${{ env.DEB_FILE_NAME }}
             ${{ env.ROOTLESS_DEB_FILE_NAME }}
-            ${{ env.APP_NAME }}-new.ipa
+            ${{ env.APP_NAME }}.ipa
           generate_release_notes: true
           fail_on_unmatched_files: true
           token: ${{ env.GH_TOKEN }}
@@ -255,54 +225,30 @@ jobs:
           NAME=$(grep '^Name:' control | cut -d ' ' -f 2)
           echo "APP_NAME=$NAME" >> $GITHUB_ENV
 
-      - name: Download version artifacts
+      - name: Download version artifact
         uses: actions/download-artifact@v4
         with:
-          path: .
+          name: version
 
-      - name: Read Discord versions
+      - name: Download IPA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ipa
+
+      - name: Read Discord version
         run: |
-          OLD_PLIST=$(find version-old -name Info.plist | head -n 1)
-          NEW_PLIST=$(find version-new -name Info.plist | head -n 1)
-          OLD_VERSION=$(plutil -p "$OLD_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
-          NEW_VERSION=$(plutil -p "$NEW_PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4 || echo "")
-          echo "OLD_VERSION=$OLD_VERSION" >> $GITHUB_ENV
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
-      - name: Download IPA artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ipa-old
-          path: ipa-old
-        if: ${{ env.OLD_VERSION != '' }}
-
-      - name: Download IPA artifacts (new)
-        uses: actions/download-artifact@v4
-        with:
-          name: ipa-new
-          path: ipa-new
-        if: ${{ env.NEW_VERSION != '' }}
+          PLIST=$(find . -name Info.plist | head -n 1)
+          VERSION=$(plutil -p "$PLIST" | grep CFBundleShortVersionString | cut -d '"' -f 4)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Update app-repo.json
         run: |
           DATE=$(date -u +"%Y-%m-%d")
           REPO=${{ github.repository }}
-
-          # Old variant (340.x)
-          if [ -n "$OLD_VERSION" ] && [ -f ipa-old/${{ env.APP_NAME }}.ipa ]; then
-            IPA_SIZE=$(ls -l ipa-old/${{ env.APP_NAME }}.ipa | awk '{print $5}')
-            DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$OLD_VERSION/${{ env.APP_NAME }}-old.ipa"
-            NEW_ENTRY=$(jq -n --arg version "$OLD_VERSION" --arg date "$DATE" --arg size "$IPA_SIZE" --arg downloadURL "$DOWNLOAD_URL" '{version: $version, date: $date, size: ($size | tonumber), downloadURL: $downloadURL, label: "old"}')
-            jq --argjson newEntry "$NEW_ENTRY" '(.apps[0].versions |= map(select(.label != "old"))) | .apps[0].versions |= [$newEntry] + .' app-repo.json > temp.json && mv temp.json app-repo.json
-          fi
-
-          # New variant (341.x+)
-          if [ -n "$NEW_VERSION" ] && [ -f ipa-new/${{ env.APP_NAME }}.ipa ]; then
-            IPA_SIZE=$(ls -l ipa-new/${{ env.APP_NAME }}.ipa | awk '{print $5}')
-            DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$NEW_VERSION/${{ env.APP_NAME }}-new.ipa"
-            NEW_ENTRY=$(jq -n --arg version "$NEW_VERSION" --arg date "$DATE" --arg size "$IPA_SIZE" --arg downloadURL "$DOWNLOAD_URL" '{version: $version, date: $date, size: ($size | tonumber), downloadURL: $downloadURL, label: "new"}')
-            jq --argjson newEntry "$NEW_ENTRY" '(.apps[0].versions |= map(select(.label != "new"))) | .apps[0].versions |= [$newEntry] + .' app-repo.json > temp.json && mv temp.json app-repo.json
-          fi
+          IPA_SIZE=$(ls -l ${{ env.APP_NAME }}.ipa | awk '{print $5}')
+          DOWNLOAD_URL="https://github.com/$REPO/releases/download/v$VERSION/${{ env.APP_NAME }}.ipa"
+          NEW_ENTRY=$(jq -n --arg version "$VERSION" --arg date "$DATE" --arg size "$IPA_SIZE" --arg downloadURL "$DOWNLOAD_URL" '{version: $version, date: $date, size: ($size | tonumber), downloadURL: $downloadURL, label: "new"}')
+          jq --argjson newEntry "$NEW_ENTRY" '.apps[0].versions = [$newEntry]' app-repo.json > temp.json && mv temp.json app-repo.json
 
       - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
         with:

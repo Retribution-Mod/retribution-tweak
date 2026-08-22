@@ -68,7 +68,7 @@ static uint32_t expectedHbcVersion = 96;
         RetributionLog(@"Using custom load URL: %@", bundleUrl.absoluteString);
     } else {
         NSString *bundleFile = [NSString stringWithFormat:@"retribution-%@.min.js", bundleSuffix];
-        bundleUrl = [NSURL URLWithString:[NSString stringWithFormat:@"https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/%@", bundleFile]];
+        bundleUrl = [NSURL URLWithString:[NSString stringWithFormat:@"https://github.com/Retribution-Mod/Retribution-IPA/releases/latest/download/%@", bundleFile]];
         RetributionLog(@"Using default bundle URL: %@", bundleUrl.absoluteString);
     }
 

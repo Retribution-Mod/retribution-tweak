@@ -16,15 +16,8 @@
           "version": "341.0",
           "date": "2026-08-22",
           "size": 107732242,
-          "downloadURL": "https://github.com/Retribution-Mod/retribution-tweak/releases/download/v341.0/Retribution-new.ipa",
+          "downloadURL": "https://github.com/Retribution-Mod/retribution-tweak/releases/download/v341.0/Retribution.ipa",
           "label": "new"
-        },
-        {
-          "version": "340.0",
-          "date": "2026-08-22",
-          "size": 95760822,
-          "downloadURL": "https://github.com/Retribution-Mod/retribution-tweak/releases/download/v340.0/Retribution-old.ipa",
-          "label": "old"
         }
       ],
       "appPermissions": {}
