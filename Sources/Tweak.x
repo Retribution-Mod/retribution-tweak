@@ -203,7 +203,6 @@ static uint32_t expectedHbcVersion = 96;
                                 [crumb.category isEqualToString:@"xhr"] ||
                                 [crumb.category isEqualToString:@"fetch"]) {
                                 crumb.message = @"[redacted network]";
-                                crumb.data = @{};
                             } else if (crumb.message) {
                                 crumb.message = redactForSentry(crumb.message);
                             }
