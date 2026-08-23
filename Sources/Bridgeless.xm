@@ -68,10 +68,13 @@ static const uint32_t EXPECTED_HBC_VERSION = 98;
 
     __block NSData *bundle = nil;
 
-    NSURL *cachedBundlePath = [pyoncordDirectory URLByAppendingPathComponent:@"bundle-new.js"];
+    // The release artifact retribution-new.min.js is now plain JS. Use a distinct
+    // cache/local filename so any older HBC bundle-new.js in pyoncordDirectory is
+    // ignored on the first launch of this build.
+    NSURL *cachedBundlePath = [pyoncordDirectory URLByAppendingPathComponent:@"bundle-new.min.js"];
     bundle = [NSData dataWithContentsOfURL:cachedBundlePath];
 
-    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle-new" withExtension:@"js"];
+    NSURL *localBundlePath = [retributionPatchesBundle URLForResource:@"bundle-new.min" withExtension:@"js"];
     if (!bundle && localBundlePath) {
         bundle = [NSData dataWithContentsOfURL:localBundlePath];
         if (bundle) {
