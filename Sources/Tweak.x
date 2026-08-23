@@ -179,17 +179,53 @@ static uint32_t expectedHbcVersion = 96;
 
 %ctor {
     @autoreleasepool {
-        [SentryObjCSDK startWithConfigureOptions:^(SentryObjCOptions *options) {
-            options.dsn = @"https://a77b2f26326ef464b4c314c1d7c2b345@o4509257425813504.ingest.us.sentry.io/4511957303623680";
-            options.releaseName = [NSString stringWithFormat:@"retribution-tweak@%@", PACKAGE_VERSION];
-            options.environment = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/jb"] ? @"jailbroken" : @"jailed";
-            options.enableSwizzling = NO;
-        }];
-
         source = [NSURL URLWithString:@"retribution"];
 
         NSString *install_prefix = @"/var/jb";
         isJailbroken = [[NSFileManager defaultManager] fileExistsAtPath:install_prefix];
+
+        // SentryObjC's internal bootstrap can call null function pointers in sandboxed
+        // sideloaded contexts. Only initialize on jailbroken installs for now.
+        if (isJailbroken) {
+            [SentryObjCSDK startWithConfigureOptions:^(SentryObjCOptions *options) {
+                options.dsn = @"https://50e2941f7dc5a3387e8121ef714187e2@o4509257425813504.ingest.us.sentry.io/4511957712109568";
+                options.releaseName = [NSString stringWithFormat:@"retribution-tweak@%@", PACKAGE_VERSION];
+                options.environment = @"jailbroken";
+                options.enableSwizzling = NO;
+                options.sendDefaultPii = NO;
+                options.beforeSend = ^(SentryObjCEvent *event) {
+                    event.user = nil;
+                    event.request = nil;
+
+                    if (event.breadcrumbs) {
+                        for (SentryObjCBreadcrumb *crumb in event.breadcrumbs) {
+                            if ([crumb.category isEqualToString:@"http"] ||
+                                [crumb.category isEqualToString:@"xhr"] ||
+                                [crumb.category isEqualToString:@"fetch"]) {
+                                crumb.message = @"[redacted network]";
+                                crumb.data = @{};
+                            } else if (crumb.message) {
+                                crumb.message = redactForSentry(crumb.message);
+                            }
+                        }
+                    }
+
+                    if (event.exceptions) {
+                        for (SentryObjCException *ex in event.exceptions) {
+                            if (ex.value) ex.value = redactForSentry(ex.value);
+                        }
+                    }
+
+                    if (event.message) {
+                        SentryObjCMessage *newMessage = [[SentryObjCMessage alloc] initWithFormatted:redactForSentry(event.message.formatted) ?: @""];
+                        newMessage.message = redactForSentry(event.message.message);
+                        event.message = newMessage;
+                    }
+
+                    return event;
+                };
+            }];
+        }
 
         NSString *bundlePath = [NSString stringWithFormat:@"%@/Library/Application Support/RetributionResources.bundle", install_prefix];
         RetributionLog(@"Is jailbroken: %d", isJailbroken);
@@ -212,7 +248,7 @@ static uint32_t expectedHbcVersion = 96;
             RetributionLog(@"Bundle contents: %@", bundleContents);
         }
 
-pyoncordDirectory = getPyoncordDirectory();
+        pyoncordDirectory = getPyoncordDirectory();
         loaderConfig = [[LoaderConfig alloc] init];
         [loaderConfig loadConfig];
         

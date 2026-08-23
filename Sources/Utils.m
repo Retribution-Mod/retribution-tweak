@@ -89,4 +89,42 @@ void showErrorAlert(NSString *title, NSString *message) {
         
         [window.rootViewController presentViewController:alert animated:YES completion:nil];
     });
-} 
+}
+
+NSString *redactForSentry(NSString *value) {
+    if (!value) return nil;
+
+    NSRange fullRange = NSMakeRange(0, value.length);
+
+    // Discord / JWT-like tokens
+    value = [value stringByReplacingOccurrencesOfString:@"\\bM[\\w-]{20,}\\.[\\w-]{6,}\\.[\\w-]{27,}\\b" 
+                                               withString:@"<redacted-discord-token>"
+                                                  options:NSRegularExpressionSearch
+                                                    range:fullRange];
+    value = [value stringByReplacingOccurrencesOfString:@"(?i)\\bmfa_[\\w-]{10,}\\b" 
+                                               withString:@"<redacted-mfa-token>"
+                                                  options:NSRegularExpressionSearch
+                                                    range:fullRange];
+    value = [value stringByReplacingOccurrencesOfString:@"\\beyJ[\\w-]{10,}\\.eyJ[\\w-]{10,}\\.[\\w-]{10,}\\b" 
+                                               withString:@"<redacted-jwt>"
+                                                  options:NSRegularExpressionSearch
+                                                    range:fullRange];
+    value = [value stringByReplacingOccurrencesOfString:@"(?i)\\bBearer\\s+[\\w-]+" 
+                                               withString:@"Bearer <redacted>"
+                                                  options:NSRegularExpressionSearch
+                                                    range:fullRange];
+    value = [value stringByReplacingOccurrencesOfString:@"\\b[a-f0-9]{64}\\b" 
+                                               withString:@"<redacted-hash>"
+                                                  options:NSRegularExpressionSearch
+                                                    range:fullRange];
+    value = [value stringByReplacingOccurrencesOfString:@"(?i)(token|authorization|password|secret|cookie)\\s*[:=]\\s*[^\\s&\"]{4,}" 
+                                               withString:@"<redacted>"
+                                                  options:NSRegularExpressionSearch
+                                                    range:fullRange];
+    value = [value stringByReplacingOccurrencesOfString:@"(https?://[^\\s?\"<]+)\\?[^\\s\"<]+" 
+                                               withString:@"<redacted-url>"
+                                                  options:NSRegularExpressionSearch
+                                                    range:fullRange];
+
+    return value;
+}
