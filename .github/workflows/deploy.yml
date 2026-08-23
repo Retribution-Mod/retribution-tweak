@@ -187,11 +187,12 @@ jobs:
             mv ipa/${{ env.APP_NAME }}.ipa ${{ env.APP_NAME }}.ipa
           fi
 
-      - name: Delete existing release
+      - name: Delete previous releases and tags
         run: |
-          if gh release view "v${{ env.DISCORD_VERSION }}" >/dev/null 2>&1; then
-            gh release delete "v${{ env.DISCORD_VERSION }}" --yes
-          fi
+          gh release list --json tagName -q '.[].tagName' | while IFS= read -r tag; do
+            echo "Deleting release and tag: $tag"
+            gh release delete "$tag" --cleanup-tag --yes
+          done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
