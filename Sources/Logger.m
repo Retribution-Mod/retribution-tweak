@@ -1,5 +1,6 @@
 #import "Logger.h"
 #import "Utils.h"
+#import <SentryObjC/SentryObjC.h>
 #include <stdarg.h>
 
 void RetributionLog(NSString *fmt, ...) {
@@ -29,5 +30,11 @@ void RetributionLog(NSString *fmt, ...) {
         NSString *line = [NSString stringWithFormat:@"[%@] %@\n", [formatter stringFromDate:[NSDate date]], message];
         [file writeData:[line dataUsingEncoding:NSUTF8StringEncoding]];
         [file closeFile];
+    }
+
+    if ([SentryObjCSDK isEnabled]) {
+        SentryObjCBreadcrumb *crumb = [[SentryObjCBreadcrumb alloc] initWithLevel:SentryObjCLevelInfo category:@"retribution"];
+        crumb.message = message;
+        [SentryObjCSDK addBreadcrumb:crumb];
     }
 }

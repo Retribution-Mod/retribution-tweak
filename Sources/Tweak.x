@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <SentryObjC/SentryObjC.h>
 #import "Utils.h"
 #import "Logger.h"
 #import "Theme.h"
@@ -178,6 +179,13 @@ static uint32_t expectedHbcVersion = 96;
 
 %ctor {
     @autoreleasepool {
+        [SentryObjCSDK startWithConfigureOptions:^(SentryObjCOptions *options) {
+            options.dsn = @"https://a77b2f26326ef464b4c314c1d7c2b345@o4509257425813504.ingest.us.sentry.io/4511957303623680";
+            options.releaseName = [NSString stringWithFormat:@"retribution-tweak@%@", PACKAGE_VERSION];
+            options.environment = [[NSFileManager defaultManager] fileExistsAtPath:@"/var/jb"] ? @"jailbroken" : @"jailed";
+            options.enableSwizzling = NO;
+        }];
+
         source = [NSURL URLWithString:@"retribution"];
 
         NSString *install_prefix = @"/var/jb";

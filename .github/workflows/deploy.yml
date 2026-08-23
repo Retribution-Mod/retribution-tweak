@@ -46,6 +46,13 @@ jobs:
         run: |
           echo "PATH=$(brew --prefix make)/libexec/gnubin:$PATH" >> $GITHUB_ENV
 
+      - name: Download SentryObjC framework
+        run: |
+          curl -L --fail --max-time 180 -o SentryObjC-Dynamic.xcframework.zip https://github.com/getsentry/sentry-cocoa/releases/download/9.26.0/SentryObjC-Dynamic.xcframework.zip
+          unzip -q SentryObjC-Dynamic.xcframework.zip
+          rm -f SentryObjC-Dynamic.xcframework.zip
+          cp -R SentryObjC-Dynamic.xcframework/ios-arm64/SentryObjC.framework SentryObjC.framework
+
       - name: Build packages
         run: make package FINALPACKAGE=1 && make package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 
