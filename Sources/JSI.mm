@@ -41,8 +41,7 @@ private:
                 return;
             }
             auto buffer = std::make_shared<NSDataBuffer>(scriptData);
-            auto prepared = runtime.prepareJavaScript(buffer, sourceUrl);
-            runtime.evaluatePreparedJavaScript(prepared);
+            runtime.evaluateJavaScript(buffer, sourceUrl);
         } else {
             std::string source((const char *)scriptData.bytes, scriptData.length);
             auto buffer = std::make_shared<jsi::StringBuffer>(std::move(source));
