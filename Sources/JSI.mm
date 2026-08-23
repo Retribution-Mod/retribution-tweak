@@ -26,7 +26,7 @@ private:
 
 @implementation JSI
 
-+ (void)evaluate:(NSData *)scriptData tag:(NSString *)tag runtime:(jsi::Runtime &)runtime {
++ (void)evaluate:(NSData *)scriptData tag:(NSString *)tag runtime:(jsi::Runtime &)runtime expectedHbcVersion:(uint32_t)expectedHbcVersion {
     if (scriptData.length == 0) {
         return;
     }
@@ -34,7 +34,12 @@ private:
     try {
         std::string sourceUrl(tag.UTF8String ?: "");
 
-        if (hermesBytecodeVersionOfData(scriptData) != 0) {
+        uint32_t hbcVersion = hermesBytecodeVersionOfData(scriptData);
+        if (hbcVersion != 0) {
+            if (expectedHbcVersion != 0 && hbcVersion != expectedHbcVersion) {
+                RetributionLog(@"[JSI] Skipping '%@': HBC version mismatch (got %u, expected %u). Evaluating as-is would crash.", tag, hbcVersion, expectedHbcVersion);
+                return;
+            }
             auto buffer = std::make_shared<NSDataBuffer>(scriptData);
             auto prepared = runtime.prepareJavaScript(buffer, sourceUrl);
             runtime.evaluatePreparedJavaScript(prepared);
@@ -48,6 +53,10 @@ private:
     } catch (const std::exception &e) {
         RetributionLog(@"[JSI] exception for '%@': %s", tag, e.what());
     }
+}
+
++ (void)evaluate:(NSData *)scriptData tag:(NSString *)tag runtime:(jsi::Runtime &)runtime {
+    [self evaluate:scriptData tag:tag runtime:runtime expectedHbcVersion:0];
 }
 
 @end
