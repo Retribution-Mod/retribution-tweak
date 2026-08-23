@@ -21,8 +21,7 @@ include $(THEOS_MAKE_PATH)/bundle.mk
 
 before-all::
 	$(ECHO_NOTHING)mkdir -p Resources$(ECHO_END)
-	$(ECHO_NOTHING)curl -L --fail --max-time 120 -o Resources/bundle-old.js https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/retribution-old.min.js || true$(ECHO_END)
-	$(ECHO_NOTHING)curl -L --fail --max-time 120 -o Resources/bundle-new.js https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/retribution-new.min.js || true$(ECHO_END)
+	$(ECHO_NOTHING)curl -L --fail --max-time 120 -o Resources/bundle-new.js https://github.com/Retribution-Mod/Retribution-IPA/releases/latest/download/retribution-new.min.js || true$(ECHO_END)
 	$(ECHO_NOTHING)sed -e 's/@PACKAGE_VERSION@/$(THEOS_PACKAGE_BASE_VERSION)/g' \
 		-e 's/@TWEAK_NAME@/$(TWEAK_NAME)/g' \
 		Sources/payload-base.template.js > Resources/payload-base.js$(ECHO_END)
