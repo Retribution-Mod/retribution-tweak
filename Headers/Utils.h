@@ -22,6 +22,11 @@ uint32_t hermesBytecodeVersionOfData(NSData *data);
  */
 uint32_t hermesBytecodeVersionOfFile(NSString *path);
 
+/**
+ * Redact tokens and sensitive strings from a value before sending to Sentry.
+ */
+NSString *redactForSentry(NSString *value);
+
 #ifdef __cplusplus
 }
 #endif
