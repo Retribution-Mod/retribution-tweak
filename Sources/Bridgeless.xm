@@ -81,7 +81,7 @@ static const uint32_t EXPECTED_HBC_VERSION = 98;
 
     NSURL *bundleUrl = loaderConfig.customLoadUrlEnabled && loaderConfig.customLoadUrl
         ? loaderConfig.customLoadUrl
-        : [NSURL URLWithString:@"https://github.com/Retribution-Mod/retribution-bundle/releases/latest/download/retribution-new.min.js"];
+        : [NSURL URLWithString:@"https://github.com/Retribution-Mod/Retribution-IPA/releases/latest/download/retribution-new.min.js"];
     NSMutableURLRequest *bundleRequest = [NSMutableURLRequest requestWithURL:bundleUrl
                                                                  cachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData
                                                              timeoutInterval:30.0];
@@ -119,8 +119,16 @@ static const uint32_t EXPECTED_HBC_VERSION = 98;
     dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
 
     if (bundle) {
-        RetributionLog(@"Executing JS bundle in bridgeless runtime");
-        [JSI evaluate:bundle tag:@"retribution:bundle" runtime:runtime];
+        uint32_t hbcVersion = hermesBytecodeVersionOfData(bundle);
+        if (hbcVersion != 0 && hbcVersion != EXPECTED_HBC_VERSION) {
+            RetributionLog(@"Cached bundle has incompatible HBC version %u (expected %u); deleting and skipping", hbcVersion, EXPECTED_HBC_VERSION);
+            [[NSFileManager defaultManager] removeItemAtURL:cachedBundlePath error:nil];
+            showErrorAlert(@"Retribution Update Required",
+                           [NSString stringWithFormat:@"The Retribution bundle (HBC v%u) is incompatible with this version of Discord (HBC v%u). A compatible bundle will be downloaded on next launch.", hbcVersion, EXPECTED_HBC_VERSION]);
+        } else {
+            RetributionLog(@"Executing JS bundle in bridgeless runtime");
+            [JSI evaluate:bundle tag:@"retribution:bundle" runtime:runtime expectedHbcVersion:EXPECTED_HBC_VERSION];
+        }
     } else {
         RetributionLog(@"No bundle available in bridgeless runtime");
     }
