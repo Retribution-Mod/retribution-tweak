@@ -42,7 +42,7 @@ static const uint32_t EXPECTED_HBC_VERSION = 98;
         NSData *payload = [NSData dataWithContentsOfURL:payloadPath];
         if (payload) {
             RetributionLog(@"Injecting bridgeless loader payload");
-            [JSI evaluate:payload tag:@"retribution:payload" runtime:runtime];
+            [JSI evaluate:payload tag:@"retribution:payload" runtime:runtime expectedHbcVersion:EXPECTED_HBC_VERSION];
         }
     }
 
