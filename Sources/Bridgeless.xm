@@ -119,7 +119,7 @@ static const uint32_t EXPECTED_HBC_VERSION = 98;
         }
         dispatch_semaphore_signal(sem);
     }] resume];
-    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4 * NSEC_PER_SEC)));
 
     if (bundle) {
         uint32_t hbcVersion = hermesBytecodeVersionOfData(bundle);

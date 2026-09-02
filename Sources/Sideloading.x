@@ -31,10 +31,11 @@ static NSString *getAccessGroupID(void) {
 
 static BOOL isSelfCall(void) {
     NSArray *address = [NSThread callStackReturnAddresses];
+    if (address.count < 3) return NO;
     Dl_info info = {0};
-    if (dladdr((void *)[address[2] longLongValue], &info) == 0) return NO;
+    if (dladdr((void *)[address[2] longLongValue], &info) == 0 || !info.dli_fname) return NO;
     NSString *path = [NSString stringWithUTF8String:info.dli_fname];
-    return [path hasPrefix:NSBundle.mainBundle.bundlePath];
+    return path && [path hasPrefix:NSBundle.mainBundle.bundlePath];
 }
 
 %group Sideloading
@@ -77,7 +78,8 @@ static BOOL isSelfCall(void) {
 
 %hook UIPasteboard
 - (NSString *)_accessGroup {
-    return getAccessGroupID();
+    NSString *group = getAccessGroupID();
+    return group ?: %orig;
 }
 %end
 

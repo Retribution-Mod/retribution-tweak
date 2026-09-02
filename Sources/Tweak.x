@@ -112,7 +112,7 @@ static uint32_t expectedHbcVersion = 96;
         dispatch_group_leave(group);
     }] resume];
 
-    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+    dispatch_group_wait(group, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4 * NSEC_PER_SEC)));
 
     if (!bundle) {
         RetributionLog(@"No bundle available; Retribution will not load");
